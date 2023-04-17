@@ -15,8 +15,8 @@ export enum TOKEN_STANDARD {
 
 @Entity('collections')
 export class CollectionEntity extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn({ type: 'bigint' })
+  id: number;
 
   @Column('varchar')
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
