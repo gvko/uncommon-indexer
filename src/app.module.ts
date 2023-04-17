@@ -7,6 +7,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CollectionModule } from './collection/collection.module';
 import { LooksrareProviderModule } from './looksrare-provider/looksrare-provider.module';
+import { ItemModule } from './item/item.module';
+import { OrderModule } from './order/order.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { LooksrareProviderModule } from './looksrare-provider/looksrare-provider
     }),
     TypeOrmModule.forRoot(ormConfig),
     CollectionModule,
+    ItemModule,
+    OrderModule,
     LooksrareProviderModule,
   ],
   controllers: [AppController],
