@@ -15,7 +15,7 @@ export class ItemService {
   }
 
   /**
-   * Creates a new item record in the DB, if one with the same address does not exist already
+   * Creates a new item record in the DB
    *
    * @param {CreateItemInput}  dto
    * @return  {Promise<ItemEntity>}

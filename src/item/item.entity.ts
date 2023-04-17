@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { CollectionEntity } from '../collection/collection.entity';
 
-@Entity('tokens')
+@Entity('items')
 @Unique(['collectionId', 'tokenId'])
 export class ItemEntity extends BaseEntity {
   @PrimaryGeneratedColumn({ type: 'bigint' })
@@ -26,7 +26,6 @@ export class ItemEntity extends BaseEntity {
   @ManyToOne(() => CollectionEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'collectionId' })
   collection: CollectionEntity;
-
   @Column({ type: 'bigint', nullable: false, name: 'collection_id' })
   collectionId: number;
 
