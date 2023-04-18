@@ -6,7 +6,7 @@ import ormConfig from './common/orm-config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CollectionModule } from './collection/collection.module';
-import { LooksrareProviderModule } from './looksrare-provider/looksrare-provider.module';
+import { NftDataProviderModule } from './nft-data-provider/nft-data-provider.module';
 import { ItemModule } from './item/item.module';
 import { OrderModule } from './order/order.module';
 
@@ -19,7 +19,7 @@ import { OrderModule } from './order/order.module';
     CollectionModule,
     ItemModule,
     OrderModule,
-    LooksrareProviderModule,
+    NftDataProviderModule,
   ],
   controllers: [AppController],
   providers: [AppService],

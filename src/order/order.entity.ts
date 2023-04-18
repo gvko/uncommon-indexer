@@ -6,7 +6,8 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  BaseEntity, OneToOne,
+  BaseEntity,
+  OneToOne,
 } from 'typeorm';
 import { CollectionEntity } from '../collection/collection.entity';
 import { ItemEntity } from '../item/item.entity';
