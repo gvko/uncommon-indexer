@@ -24,7 +24,7 @@ export class ItemEntity extends BaseEntity {
   name: string;
 
   @ManyToOne(() => CollectionEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'collectionId' })
+  @JoinColumn({ name: 'collection_id' })
   collection: CollectionEntity;
   @Column({ type: 'bigint', nullable: false, name: 'collection_id' })
   collectionId: number;

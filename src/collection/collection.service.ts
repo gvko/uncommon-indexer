@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CollectionEntity } from './collection.entity';
 import { CreateCollectionInput } from './dto/create-collection-input.dto';
+import { Collection } from '../nft-data-provider/types';
 
 @Injectable()
 export class CollectionService {
@@ -17,26 +18,26 @@ export class CollectionService {
   /**
    * Creates a new collection record in the DB, if one with the same address does not exist already
    *
-   * @param {CreateCollectionInput}  dto
+   * @param {CreateCollectionInput}  collection
    * @return  {Promise<CollectionEntity>}
    */
-  async create(dto: CreateCollectionInput): Promise<CollectionEntity> {
-    const existingCollection = this.collectionEntity.findOne({
-      where: { address: dto.address },
+  async create(collection: Collection): Promise<CollectionEntity> {
+    // TODO: Can be optimized to search in bulk
+    const existingCollection = await this.collectionEntity.findOne({
+      where: { address: collection.address },
     });
-
     if (existingCollection) {
       return existingCollection;
     }
 
     return this.collectionEntity
       .create({
-        address: dto.address,
-        owner: dto.owner,
-        setter: dto.setter,
-        name: dto.name,
-        symbol: dto.symbol,
-        type: dto.type,
+        address: collection.address,
+        owner: collection.owner,
+        setter: collection.setter,
+        name: collection.name,
+        symbol: collection.symbol,
+        type: collection.type,
       })
       .save();
   }

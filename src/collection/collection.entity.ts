@@ -39,7 +39,7 @@ export class CollectionEntity extends BaseEntity {
   @Column({
     type: 'enum',
     enum: [Object.values(TOKEN_STANDARD)],
-    name: 'token_standard',
+    name: 'type',
     nullable: true,
   })
   type: string;

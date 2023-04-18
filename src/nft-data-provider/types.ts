@@ -1,4 +1,5 @@
 import { TOKEN_STANDARD } from '../collection/collection.entity';
+import { EventType } from './nft-data-provider.service';
 
 export interface LooksRareApiResponse {
   success: boolean;
@@ -39,6 +40,7 @@ export interface ListingsData {
   token: null;
   order: Order;
   from: string;
+  type: EventType;
 }
 
 export interface OffersData {
@@ -46,4 +48,5 @@ export interface OffersData {
   token: Token;
   order: Order;
   from: string;
+  type: EventType;
 }

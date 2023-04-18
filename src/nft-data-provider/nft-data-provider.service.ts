@@ -3,7 +3,7 @@ import axios from 'axios';
 import { CollectionService } from '../collection/collection.service';
 import { ItemService } from '../item/item.service';
 import { OrderService } from '../order/order.service';
-import { LooksRareApiResponse } from './types';
+import { ListingsData, LooksRareApiResponse, OffersData } from './types';
 
 export enum EventType {
   LIST = 'LIST',
@@ -52,10 +52,25 @@ export class NftDataProviderService {
   }
 
   async getAndStoreListings(collectionAddress: string) {
-    const listings = await this.getEvents(collectionAddress, EventType.LIST);
+    const apiResponse = await this.getEvents(collectionAddress, EventType.LIST);
+    const listings = apiResponse.data as ListingsData[];
+
+    // TODO: can be optimized to store in bulk
+    for (const listing of listings) {
+      const collection = await this.collectionService.create(listing.collection);
+      const item = await this.itemService.create(listing.token, collection);
+      await this.orderService.create(listing.order, listing.from, collection, item);
+    }
   }
 
   async getAndStoreOffers(collectionAddress: string) {
-    const offers = await this.getEvents(collectionAddress, EventType.OFFER);
+    const apiResponse = await this.getEvents(collectionAddress, EventType.OFFER);
+    const offers = apiResponse.data as OffersData[];
+
+    // TODO: can be optimized to store in bulk
+    for (const offer of offers) {
+      const collection = await this.collectionService.create(offer.collection);
+      await this.orderService.create(offer.order, offer.from, collection);
+    }
   }
 }

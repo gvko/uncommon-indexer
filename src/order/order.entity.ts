@@ -7,14 +7,14 @@ import {
   ManyToOne,
   JoinColumn,
   BaseEntity,
-  OneToOne,
+  OneToOne, Unique,
 } from 'typeorm';
 import { CollectionEntity } from '../collection/collection.entity';
 import { ItemEntity } from '../item/item.entity';
 
 export enum OrderQuoteType {
-  Ask = 1,
-  Bid = 0,
+  Ask = 1, // LIST
+  Bid = 0, // OFFER
 }
 
 export enum OrderCollectionType {
@@ -23,6 +23,7 @@ export enum OrderCollectionType {
 }
 
 @Entity('orders')
+@Unique(['collectionId', 'itemId'])
 export class OrderEntity extends BaseEntity {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
@@ -36,13 +37,13 @@ export class OrderEntity extends BaseEntity {
   @Column({
     type: 'enum',
     enum: [Object.values(OrderQuoteType)],
-    name: 'order_quote_type',
+    name: 'quote_type',
     nullable: true,
   })
   quoteType: number;
 
   @ManyToOne(() => CollectionEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'collectionId' })
+  @JoinColumn({ name: 'collection_id' })
   collection: CollectionEntity;
   @Column({
     type: 'bigint',
@@ -54,7 +55,7 @@ export class OrderEntity extends BaseEntity {
   @Column({
     type: 'enum',
     enum: [Object.values(OrderCollectionType)],
-    name: 'order_collection_type',
+    name: 'collection_type',
     nullable: true,
   })
   collectionType: number;
@@ -69,11 +70,11 @@ export class OrderEntity extends BaseEntity {
   price: string;
 
   @OneToOne(() => ItemEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'itemId' })
+  @JoinColumn({ name: 'item_id' })
   item: ItemEntity;
   @Column({
     type: 'bigint',
-    nullable: false,
+    nullable: true,
     name: 'item_id',
   })
   itemId: number;
