@@ -165,16 +165,10 @@ export class OrderService {
         continue;
       }
 
-      const orderIndex = ordersWithFloorPrice.findIndex((order) => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return order.collection.address === result.value.address;
-      });
-      ordersWithFloorPrice[orderIndex].collection['floorPrice'] = result.value.floorPrice;
-      ordersWithFloorPrice[orderIndex].collection['floorPriceEth'] = web3.utils.fromWei(
-        result.value.floorPrice,
-        'ether',
-      );
+      for (const order of ordersWithFloorPrice) {
+        order.collection['floorPrice'] = result.value.floorPrice;
+        order.collection['floorPriceEth'] = web3.utils.fromWei(result.value.floorPrice, 'ether');
+      }
     }
 
     return ordersWithFloorPrice;
