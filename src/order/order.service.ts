@@ -1,11 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { OrderEntity, OrderQuoteType } from './order.entity';
 import { CreateOrderInput } from './dto/create-order-input.dto';
 import { Order } from '../nft-data-provider/types';
 import { CollectionEntity } from '../collection/collection.entity';
 import { ItemEntity } from '../item/item.entity';
+import web3 from 'web3';
 
 interface GetOrdersQueryParams {
   minPrice?: number;
@@ -13,9 +14,17 @@ interface GetOrdersQueryParams {
   offset?: number;
 }
 
-// export interface OrdersResult {
-//
-// }
+export interface OrderResult {
+  id: number;
+  orderId: string;
+  endTime: number;
+  price: string;
+  makerAddress: string;
+  endTimeDate: string;
+  priceEth: string;
+  collection: CollectionEntity;
+  item: ItemEntity;
+}
 
 @Injectable()
 export class OrderService {
@@ -85,12 +94,21 @@ export class OrderService {
   async getOrders(
     type: OrderQuoteType,
     { minPrice, maxPrice, offset }: GetOrdersQueryParams,
-  ): Promise<any[]> {
+  ): Promise<OrderResult[]> {
     const currentTimestampSec = Math.floor(Date.now() / 1000);
     const orderBy = type === OrderQuoteType.Ask ? 'ASC' : 'DESC';
     const queryBuilder = this.orderEntity.createQueryBuilder('order');
 
     queryBuilder
+      .select([
+        'order.id',
+        'order.orderId',
+        'order.price',
+        'order.endTime',
+        'order.makerAddress',
+        'collection.*',
+        'item.*',
+      ])
       .where('order.quoteType = :type', { type })
       .andWhere('order.endTime > :currentTimestampSec', { currentTimestampSec });
 
@@ -115,6 +133,10 @@ export class OrderService {
 
     const ordersDbResult = await queryBuilder.getMany();
 
-    return ordersDbResult;
+    return ordersDbResult.map((order) => {
+      order['endTimeDate'] = new Date(order.endTime * 1000);
+      order['priceEth'] = web3.utils.fromWei(order.price, 'ether');
+      return order as unknown as OrderResult;
+    });
   }
 }

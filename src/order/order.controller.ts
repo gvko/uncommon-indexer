@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { OrderService } from './order.service';
+import { OrderResult, OrderService } from './order.service';
 import { EventType } from '../nft-data-provider/nft-data-provider.service';
 import { OrderQuoteType } from './order.entity';
 
@@ -14,7 +14,7 @@ export class OrderController {
     @Query('minPrice') minPrice: number,
     @Query('maxPrice') maxPrice: number,
     @Query('offset') offset: number,
-  ): Promise<{ count: number; orders: any[] }> {
+  ): Promise<{ count: number; orders: OrderResult[] }> {
     // TODO: input validation
     const orderType = type === EventType.LIST ? OrderQuoteType.Ask : OrderQuoteType.Bid;
 
