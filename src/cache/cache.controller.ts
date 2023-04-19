@@ -14,7 +14,7 @@ export class CacheController {
   }
 
   @Get()
-  async getSets(): Promise<any[]> {
-    return [];
+  async getSets(): Promise<any> {
+    return this.cacheService.getSortedSets();
   }
 }
