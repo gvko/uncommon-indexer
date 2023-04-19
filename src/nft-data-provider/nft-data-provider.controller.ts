@@ -7,11 +7,13 @@ export class NftDataProviderController {
   }
 
   @Post(':collectionAddress')
-  async populateNftData(@Param('collectionAddress') collectionAddress: string): Promise<void> {
+  async populateNftData(@Param('collectionAddress') collectionAddress: string): Promise<string> {
     await Promise.all([
       this.nftDataProviderService.getAndStoreListings(collectionAddress),
       this.nftDataProviderService.getAndStoreOffers(collectionAddress),
     ]);
+
+    return 'OK';
   }
 
   @Get(':collectionAddress')

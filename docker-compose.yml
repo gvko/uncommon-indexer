@@ -17,8 +17,6 @@ services:
     container_name: api
     depends_on:
       - db
-#    networks:
-#      - default
 
   # PostgreSQL
   db:
@@ -32,10 +30,12 @@ services:
       POSTGRES_PASSWORD: rawr
       POSTGRES_DB: web3data
     container_name: web3data-db
-#    networks:
-#      - default
 
-#networks:
-#  default:
-#    external:
-#      name: transaction-syncing-service_default
+  # Redis
+  redis:
+    image: redis:latest
+    ports:
+      - '6379:6379'
+    expose:
+      - 6379
+    container_name: web3data-redis
