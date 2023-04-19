@@ -1,73 +1,75 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+## Design, Considerations & Assumptions
+It's assumed that the NFT data from LooksRare is populated manually, upon calling an endpoint as a trigger (`POST /nft-data/:collectionAddress`).
+Also, I could not find any `trait`-related data in the docs,
+so I've omitted specific business logic regarding this
+requirement.
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Multiple calls to the endpoint to populate the orders data
+will not update or rewrite the existing records. The duplicate
+records are simply skipped. This, of course, can be changed
+based on requirements and needs.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Also, regarding getting the current floor price of the
+collections returned in the GET orders endpoint:
+whole functionality can be optimized by storing the floor price
+when populating the collections in the DB. But that would make
+sense in a different scope - when we have a watcher that
+constantly updates the DB with collection and orders data.
+For the current scope the current implementation would do -
+namely, querying LooksRare's API for collections stats
+for each collection that is being returned by the GET orders
+endpoint.
 
-## Description
+The JSON file with entries, collections and followers data
+is being read and stored in Redis, again, upon manual trigger
+by an endpoint (`POST /cache`). The data will be stored in
+two Redis-native sorted sets with scores per unique
+collection/entry
+and which are being incremented and keep track of the amount
+of followers per collection/entry. This allows for very fast
+and easy retrieval of certain sorted subset of the data, based
+on the scores.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### Endpoints
+`POST /nft-data/:collectionAddress` - populate the NFT orders data from LooksRare into the local DB
 
-## Installation
+`GET /orders` - get orders. The following query params are possible:
+* `type` (mandatory) = `LIST` or `OFFER`
+* `minPrice` = integer
+* `maxPrice` = integer
+* `offset`   = integer
+
+`POST /cache` - populate the JSON file data into Redis
+
+`GET /cache` - get sorted sets of the 10 most followed entries and collections
+
+## Prerequisites to run the app
+
+1. Create a file named `.env` in the root of the project dir
+2. Copy-paste the contents of the `.env.example` file into the `.env` file
+3. Replace any values you like in the `.env` file.
+
+### Quick start
+
+#### Install
 
 ```bash
 $ npm install
 ```
 
-## Running the app
+#### DB Docker containers
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+$ docker-compose up -d db
+```
+```bash
+$ docker-compose up -d redis
 ```
 
-## Test
+#### Running the app
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+$ npm start
 ```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+This will start the app locally in watch mode (changes to the code
+will automatically trigger recompilation and restart of the app).
