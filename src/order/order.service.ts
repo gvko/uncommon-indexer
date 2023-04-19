@@ -1,12 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import web3 from 'web3';
 import { OrderEntity, OrderQuoteType } from './order.entity';
 import { CreateOrderInput } from './dto/create-order-input.dto';
-import { Order } from '../nft-data-provider/types';
+import { CollectionStats, Order } from '../nft-data-provider/types';
 import { CollectionEntity } from '../collection/collection.entity';
 import { ItemEntity } from '../item/item.entity';
-import web3 from 'web3';
+import { NftDataProviderService } from '../nft-data-provider/nft-data-provider.service';
 
 interface GetOrdersQueryParams {
   minPrice?: number;
@@ -22,6 +23,8 @@ export interface OrderResult {
   makerAddress: string;
   endTimeDate: string;
   priceEth: string;
+  collectionFloorPrice: string;
+  collectionFloorPriceEth: string;
   collection: CollectionEntity;
   item: ItemEntity;
 }
@@ -32,6 +35,8 @@ export class OrderService {
 
   constructor(
     @InjectRepository(OrderEntity) private orderEntity: Repository<OrderEntity>,
+    @Inject(forwardRef(() => NftDataProviderService))
+    private readonly nftDataProviderService: NftDataProviderService,
   ) {
     this.logger = new Logger(OrderService.name);
   }
@@ -132,11 +137,46 @@ export class OrderService {
     queryBuilder.limit(10);
 
     const ordersDbResult = await queryBuilder.getMany();
+    const orders = await this.getCollectionsFloorPrice(ordersDbResult);
 
-    return ordersDbResult.map((order) => {
-      order['endTimeDate'] = new Date(order.endTime * 1000);
-      order['priceEth'] = web3.utils.fromWei(order.price, 'ether');
-      return order as unknown as OrderResult;
+    return orders.map((order) => {
+      order.endTimeDate = new Date(order.endTime * 1000).toDateString();
+      order.priceEth = web3.utils.fromWei(order.price, 'ether');
+      return order;
     });
+  }
+
+  private async getCollectionsFloorPrice(
+    ordersDbResult: OrderEntity[],
+  ): Promise<OrderResult[]> {
+    const ordersWithFloorPrice = ordersDbResult as unknown as OrderResult[];
+    const collectionsAddresses = ordersDbResult.map((order) => {
+      return order.collection.address;
+    });
+
+    const promises = [];
+    for (const address of collectionsAddresses) {
+      promises.push(this.nftDataProviderService.getCollectionStats(address));
+    }
+
+    const promisesResults = await Promise.allSettled<CollectionStats>(promises);
+    for (const result of promisesResults) {
+      if (result.status === 'rejected') {
+        continue;
+      }
+
+      const orderIndex = ordersWithFloorPrice.findIndex((order) => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return order.collection.address === result.value.address;
+      });
+      ordersWithFloorPrice[orderIndex].collection['floorPrice'] = result.value.floorPrice;
+      ordersWithFloorPrice[orderIndex].collection['floorPriceEth'] = web3.utils.fromWei(
+        result.value.floorPrice,
+        'ether',
+      );
+    }
+
+    return ordersWithFloorPrice;
   }
 }

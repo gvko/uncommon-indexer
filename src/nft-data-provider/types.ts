@@ -4,7 +4,7 @@ import { EventType } from './nft-data-provider.service';
 export interface LooksRareApiResponse {
   success: boolean;
   message: string | null;
-  data: ListingsData[] | OffersData[] | null;
+  data: ListingsData[] | OffersData[] | CollectionStats | null;
   errors: any[];
 }
 
@@ -49,4 +49,9 @@ export interface OffersData {
   order: Order;
   from: string;
   type: EventType;
+}
+
+export interface CollectionStats {
+  address: string;
+  floorPrice: string;
 }

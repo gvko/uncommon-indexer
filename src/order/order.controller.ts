@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
 import { OrderResult, OrderService } from './order.service';
 import { EventType } from '../nft-data-provider/nft-data-provider.service';
 import { OrderQuoteType } from './order.entity';
@@ -15,8 +15,12 @@ export class OrderController {
     @Query('maxPrice') maxPrice: number,
     @Query('offset') offset: number,
   ): Promise<{ count: number; orders: OrderResult[] }> {
-    // TODO: input validation
+    const possibleOrderTypes = Object.values(EventType);
+    if (!possibleOrderTypes.includes(type)) {
+      throw new BadRequestException(`Order type '${type}' is not valid. Allowed values: ${possibleOrderTypes}`);
+    }
     const orderType = type === EventType.LIST ? OrderQuoteType.Ask : OrderQuoteType.Bid;
+    // TODO: input validation for the rest of the query params
 
     const orders = await this.orderService.getOrders(orderType, { minPrice, maxPrice, offset });
     return {

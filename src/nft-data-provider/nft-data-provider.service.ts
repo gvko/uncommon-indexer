@@ -1,43 +1,50 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { CollectionService } from '../collection/collection.service';
 import { ItemService } from '../item/item.service';
 import { OrderService } from '../order/order.service';
-import { ListingsData, LooksRareApiResponse, OffersData } from './types';
+import { CollectionStats, ListingsData, LooksRareApiResponse, OffersData } from './types';
 
 export enum EventType {
   LIST = 'LIST',
   OFFER = 'OFFER',
 }
 
+enum ApiEndpoints {
+  events = 'events',
+  collectionStats = 'collections/stats',
+}
+
 @Injectable()
 export class NftDataProviderService {
   private readonly logger: Logger;
-  private readonly apiUrl: string;
+  private readonly apiUrlV1: string;
+  private readonly apiUrlV2: string;
 
   constructor(
+    @Inject(forwardRef(() => CollectionService))
     private readonly collectionService: CollectionService,
     private readonly itemService: ItemService,
     private readonly orderService: OrderService,
   ) {
     this.logger = new Logger(NftDataProviderService.name);
-    this.apiUrl = 'https://api.looksrare.org/api/v2';
+    this.apiUrlV1 = 'https://api.looksrare.org/api/v1';
+    this.apiUrlV2 = 'https://api.looksrare.org/api/v2';
   }
 
-  private async getEvents(
-    collectionAddress: string,
-    eventType: EventType,
+  private async callApiGet(
+    apiUrl: string,
+    endpoint: ApiEndpoints,
+    params: any,
   ): Promise<LooksRareApiResponse> {
-    const url = `${this.apiUrl}/events`;
+    const url = `${apiUrl}/${endpoint}`;
     const options = {
       headers: {
         Accept: 'application/json',
       },
-      params: {
-        collection: collectionAddress,
-        type: eventType,
-      },
+      params,
     };
+
     try {
       const response = await axios.get(url, options);
       return response.data;
@@ -51,9 +58,26 @@ export class NftDataProviderService {
     }
   }
 
+  private async getEvents(
+    collectionAddress: string,
+    eventType: EventType,
+  ): Promise<ListingsData[] | OffersData[]> {
+    const apiResponse = await this.callApiGet(this.apiUrlV2, ApiEndpoints.events, {
+      collection: collectionAddress,
+      type: eventType,
+    });
+    return apiResponse.data as ListingsData[] | OffersData[];
+  }
+
+  async getCollectionStats(collectionAddress: string): Promise<CollectionStats> {
+    const apiResponse = await this.callApiGet(this.apiUrlV1, ApiEndpoints.collectionStats, {
+      address: collectionAddress,
+    });
+    return apiResponse.data as CollectionStats;
+  }
+
   async getAndStoreListings(collectionAddress: string) {
-    const apiResponse = await this.getEvents(collectionAddress, EventType.LIST);
-    const listings = apiResponse.data as ListingsData[];
+    const listings = (await this.getEvents(collectionAddress, EventType.LIST)) as ListingsData[];
 
     // TODO: can be optimized to store in bulk
     for (const listing of listings) {
@@ -64,8 +88,7 @@ export class NftDataProviderService {
   }
 
   async getAndStoreOffers(collectionAddress: string) {
-    const apiResponse = await this.getEvents(collectionAddress, EventType.OFFER);
-    const offers = apiResponse.data as OffersData[];
+    const offers = (await this.getEvents(collectionAddress, EventType.OFFER)) as OffersData[];
 
     // TODO: can be optimized to store in bulk
     for (const offer of offers) {
