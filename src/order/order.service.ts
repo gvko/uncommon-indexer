@@ -1,11 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { OrderEntity, OrderQuoteType } from './order.entity';
 import { CreateOrderInput } from './dto/create-order-input.dto';
 import { Order } from '../nft-data-provider/types';
 import { CollectionEntity } from '../collection/collection.entity';
 import { ItemEntity } from '../item/item.entity';
+
+interface GetOrdersQueryParams {
+  minPrice?: number;
+  maxPrice?: number;
+  offset?: number;
+}
+
+// export interface OrdersResult {
+//
+// }
 
 @Injectable()
 export class OrderService {
@@ -70,5 +80,41 @@ export class OrderService {
       });
       throw err;
     }
+  }
+
+  async getOrders(
+    type: OrderQuoteType,
+    { minPrice, maxPrice, offset }: GetOrdersQueryParams,
+  ): Promise<any[]> {
+    const currentTimestampSec = Math.floor(Date.now() / 1000);
+    const orderBy = type === OrderQuoteType.Ask ? 'ASC' : 'DESC';
+    const queryBuilder = this.orderEntity.createQueryBuilder('order');
+
+    queryBuilder
+      .where('order.quoteType = :type', { type })
+      .andWhere('order.endTime > :currentTimestampSec', { currentTimestampSec });
+
+    if (minPrice) {
+      queryBuilder.andWhere('order.price >= :minPrice', { minPrice });
+    }
+    if (maxPrice) {
+      queryBuilder.andWhere('order.price <= :maxPrice', { maxPrice });
+    }
+
+    queryBuilder
+      .leftJoinAndSelect('order.collection', 'collection')
+      .leftJoinAndSelect('order.item', 'item');
+
+    if (offset) {
+      queryBuilder.offset(offset);
+    }
+
+    queryBuilder.addOrderBy('order.price', orderBy);
+    // Always limit the result to 10 records
+    queryBuilder.limit(10);
+
+    const ordersDbResult = await queryBuilder.getMany();
+
+    return ordersDbResult;
   }
 }
