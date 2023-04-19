@@ -32,6 +32,14 @@ export class NftDataProviderService {
     this.apiUrlV2 = 'https://api.looksrare.org/api/v2';
   }
 
+  /**
+   * General function for making a GET request to the LooksRare API
+   *
+   * @param apiUrl
+   * @param endpoint
+   * @param params
+   * @private
+   */
   private async callApiGet(
     apiUrl: string,
     endpoint: ApiEndpoints,
@@ -58,6 +66,13 @@ export class NftDataProviderService {
     }
   }
 
+  /**
+   * Get the events from the /events endpoint
+   *
+   * @param collectionAddress
+   * @param eventType
+   * @private
+   */
   private async getEvents(
     collectionAddress: string,
     eventType: EventType,
@@ -69,6 +84,10 @@ export class NftDataProviderService {
     return apiResponse.data as ListingsData[] | OffersData[];
   }
 
+  /**
+   * Get the collection stats from the /collections/stats endpoint
+   * @param collectionAddress
+   */
   async getCollectionStats(collectionAddress: string): Promise<CollectionStats> {
     const apiResponse = await this.callApiGet(this.apiUrlV1, ApiEndpoints.collectionStats, {
       address: collectionAddress,
@@ -76,6 +95,10 @@ export class NftDataProviderService {
     return apiResponse.data as CollectionStats;
   }
 
+  /**
+   * Get the LIST events and store in the DB
+   * @param collectionAddress
+   */
   async getAndStoreListings(collectionAddress: string) {
     const listings = (await this.getEvents(collectionAddress, EventType.LIST)) as ListingsData[];
 
@@ -87,6 +110,10 @@ export class NftDataProviderService {
     }
   }
 
+  /**
+   * Get the OFFER events and store in the DB
+   * @param collectionAddress
+   */
   async getAndStoreOffers(collectionAddress: string) {
     const offers = (await this.getEvents(collectionAddress, EventType.OFFER)) as OffersData[];
 

@@ -96,6 +96,14 @@ export class OrderService {
     }
   }
 
+  /**
+   * Get the orders, filtered by given parameters.
+   * Add floor price to the collection of each order.
+   *
+   * @param {OrderQuoteType}  type
+   * @param {GetOrdersQueryParams}  params
+   * @return  {Promise<OrderResult[]>}
+   */
   async getOrders(
     type: OrderQuoteType,
     { minPrice, maxPrice, offset }: GetOrdersQueryParams,
@@ -137,7 +145,7 @@ export class OrderService {
     queryBuilder.limit(10);
 
     const ordersDbResult = await queryBuilder.getMany();
-    const orders = await this.getCollectionsFloorPrice(ordersDbResult);
+    const orders = await this.populateCollectionsFloorPrice(ordersDbResult);
 
     return orders.map((order) => {
       order.endTimeDate = new Date(order.endTime * 1000).toDateString();
@@ -146,9 +154,21 @@ export class OrderService {
     });
   }
 
-  private async getCollectionsFloorPrice(
+  /**
+   * Get collections stats, in particular the current floor price, for a list of collections
+   * by given address. Then populate the floor price per collection of the list of orders.
+   *
+   * @param {OrderEntity[]} ordersDbResult
+   * @private
+   * @return {Promise<OrderResult[]>}
+   */
+  private async populateCollectionsFloorPrice(
     ordersDbResult: OrderEntity[],
   ): Promise<OrderResult[]> {
+    // TODO: this whole functionality can be optimized by storing the floor price when
+    //  populating the collections in the DB. But that would make sense in a different
+    //  scope - when we have a watcher that constantly updates the DB with collection and orders data.
+    //  For the current scope this would do.
     const ordersWithFloorPrice = ordersDbResult as unknown as OrderResult[];
     const collectionsAddresses = ordersDbResult.map((order) => {
       return order.collection.address;
@@ -166,6 +186,9 @@ export class OrderService {
       }
 
       for (const order of ordersWithFloorPrice) {
+        if (order.collection.address != result.value.address) {
+          continue;
+        }
         order.collection['floorPrice'] = result.value.floorPrice;
         order.collection['floorPriceEth'] = web3.utils.fromWei(result.value.floorPrice, 'ether');
       }
